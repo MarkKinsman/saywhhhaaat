@@ -19,7 +19,7 @@ public class DictationManager : MonoBehaviour {
     [Space(4)]
     [Header("Web Settings")]
     [SerializeField]
-    string projectName = "UWMC";
+    string projectName;
     [SerializeField]
     string dataLocation = "https://5986o5obfd.execute-api.us-west-2.amazonaws.com/prod/set_metadata";
     [SerializeField]
@@ -319,6 +319,7 @@ public class DictationManager : MonoBehaviour {
             dictation.id = cur_time;
             dictation.setPosition(mouthCollider.transform.position);
             dictation.username = userName;
+            dictation.projectName = projectName;
 
             
             WWWForm positionForm = new WWWForm();

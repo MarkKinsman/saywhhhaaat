@@ -5,6 +5,7 @@ using System;
 [Serializable]
 public class Dictation{
     public int id;
+    public string projectName;
     public float x;
     public float y;
     public float z;
