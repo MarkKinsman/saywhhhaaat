@@ -1,15 +1,27 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
-public class Dictation : MonoBehaviour {
+[Serializable]
+public class Dictation{
+    public string GUID;
+    public float x;
+    public float y;
+    public float z;
+    public string sphericalImage;
+    public Byte[] audio;
+    public string audioTranscription;
+    public string username;
+    public string designDiscipline;
+    public string typeOfUser;
+    public string estimatedCost;
+    public string estimatedTime;
+    public string levelOfImpact;
 
-	// Use this for initialization
-	void Start () {
-	
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
+    public void setPosition(Vector3 pos)
+    {
+        x = pos.x;
+        y = pos.y;
+        z = pos.z;
+    }
 }

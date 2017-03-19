@@ -126,13 +126,13 @@ Material:
       second: 512
     - first:
         name: _U
-      second: 3000
+      second: 2048
     - first:
         name: _UVSec
       second: 0
     - first:
         name: _V
-      second: 6000
+      second: 2048
     - first:
         name: _ZWrite
       second: 1

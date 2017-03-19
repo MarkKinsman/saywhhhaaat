@@ -197,7 +197,7 @@ public class WavUtility
         return FromAudioClip(audioClip, out file, false);
     }
 
-    public static byte[] FromAudioClip(AudioClip audioClip, out string filepath, bool saveAsFile = true, string dirname = "recordings")
+    public static byte[] FromAudioClip(AudioClip audioClip, out string filepath, bool saveAsFile = true, string dirname = "_Recordings")
     {
         MemoryStream stream = new MemoryStream();
 
