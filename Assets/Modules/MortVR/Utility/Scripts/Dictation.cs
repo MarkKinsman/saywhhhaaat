@@ -8,8 +8,8 @@ public class Dictation{
     public float x;
     public float y;
     public float z;
-    public string sphericalImage;
-    public Byte[] audio;
+    public byte[] image;
+    public byte[] audio;
     public string audioTranscription;
     public string username;
     public string designDiscipline;

@@ -232,7 +232,7 @@ public class WavUtility
                 Directory.CreateDirectory(string.Format("{0}./{1}", Application.dataPath,dirname));
             }
 
-            filepath = string.Format("{0}/{1}/{2}.{3}", Application.dataPath, dirname, DateTime.UtcNow.ToString("yyMMdd-HHmmss-fff"), "wav");
+            filepath = string.Format("{0}/{1}/recording_{2}.{3}", Application.dataPath, dirname, System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"), "wav");
             File.WriteAllBytes(filepath, bytes);
             //Debug.Log ("Auto-saved .wav file: " + filepath);
         }

@@ -21,7 +21,12 @@ public class DictationManager : MonoBehaviour {
     [SerializeField]
     string projectName = "UWMC";
     [SerializeField]
-    string s3Location = "https://j7m0zw3qec.execute-api.us-east-1.amazonaws.com/prod/chris2";
+    string s3Location = "https://j7m0zw3qec.execute-api.us-east-1.amazonaws.com/prod/chris2.csv";
+
+    [Space(4)]
+    [Header("User Settings")]
+    [SerializeField]
+    string userName;
 
     //Controller actions
     GameObject cameraRig;
@@ -35,6 +40,10 @@ public class DictationManager : MonoBehaviour {
     private int maxFreq;
     //A handle to the attached AudioSource
     private AudioSource goAudioSource;
+    private GameObject screenshotCamera;
+    RenderTexture screenShotRenderTexture;
+    int resWidth = 1920;
+    int resHeight = 1080;
     private string filepath;
 
     private bool record = false;
@@ -64,6 +73,7 @@ public class DictationManager : MonoBehaviour {
         cameraRig = GameObject.Find("[MortVRCameraRig](Clone)");
 
         CreateColliders();
+        CreateCamera();
 
         SetDictationButton(dictationHandSide, dictationAlias);
         print("Found camera rig.");
@@ -208,18 +218,50 @@ public class DictationManager : MonoBehaviour {
         micLocation.transform.name = "Mic Location";
     }
 
-    static string SaveDictation(int width, int height)
+    void CreateCamera()
     {
-        if (!Directory.Exists(string.Format("{0}./screenshots", Application.dataPath)))
+        screenshotCamera = new GameObject();
+        screenshotCamera.AddComponent<Camera>();
+        screenshotCamera.transform.SetParent(mouthCollider.transform);
+        screenshotCamera.transform.localRotation = Quaternion.identity;
+        screenshotCamera.transform.localPosition = new Vector3(0f, 1f, 0f);
+
+        Camera cam = screenshotCamera.GetComponent<Camera>();
+        cam.fieldOfView = 53f;
+        cam.nearClipPlane = 0.1f;
+        cam.farClipPlane = 100;
+
+
+        screenShotRenderTexture = new RenderTexture(resWidth, resHeight, 24);
+        screenshotCamera.GetComponent<Camera>().targetTexture = screenShotRenderTexture;
+
+    }
+
+    byte[] TakePicture()
+    {
+        RenderTexture currentActiveRenderTexture = RenderTexture.active;
+        RenderTexture.active = screenShotRenderTexture;
+
+        Texture2D screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
+        screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
+        screenShot.Apply();
+        byte[] bytes = screenShot.EncodeToPNG();
+
+        if (!Directory.Exists(string.Format("{0}./_Dictation", Application.dataPath)))
         {
-            Directory.CreateDirectory(string.Format("{0}./screenshots", Application.dataPath));
+            Directory.CreateDirectory(string.Format("{0}./_Dictations", Application.dataPath));
 
         }
 
-        return string.Format("{0}/screenshots/screen_{1}x{2}_{3}.png",
-                             Application.dataPath,
-                             width, height,
-                             System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+        string filename = string.Format("{0}/_Dictations/screen_{1}.png", Application.dataPath, System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+
+        System.IO.File.WriteAllBytes(filename, bytes);
+        Debug.Log(string.Format("Took screenshot to: {0}", filename));
+
+        UnityEngine.Object.Destroy(screenShot);
+        RenderTexture.active = currentActiveRenderTexture;
+
+        return bytes;
     }
 
     void Record(object sender, ControllerInteractionEventArgs e)
@@ -232,52 +274,56 @@ public class DictationManager : MonoBehaviour {
                 {
                     goAudioSource.clip = Microphone.Start(null, true, 120, maxFreq);
                     timeStart = Time.time;
+                    record = true;
                 }
             }
-            record = true;
+
             Debug.Log("Recording.");
         }
     }
 
     void StopRecord(object sender, ControllerInteractionEventArgs e)
     {
-        Microphone.End(null); //Stop the audio recording
-        AudioClip newClip = TrimClip(goAudioSource.clip, Time.time - timeStart);
-        byte[] wavFile = WavUtility.FromAudioClip(newClip, out filepath, true);
-        Debug.Log("Stop Recording.");
+        if (record)
+        { 
+            byte[] picture = TakePicture();
+            Microphone.End(null); //Stop the audio recording
+            AudioClip newClip = TrimClip(goAudioSource.clip, Time.time - timeStart);
+            byte[] wavFile = WavUtility.FromAudioClip(newClip, out filepath, true, "_Dictations");
+            Debug.Log("Stop Recording.");
 
-        Dictation comment = new Dictation();
-        comment.setPosition(mouthCollider.transform.position);
-        comment.audio = wavFile;
-        PostDictation(s3Location, comment);
+            WWWForm positionForm = new WWWForm();
+            positionForm.AddField("X", mouthCollider.transform.position.x.ToString());
+            positionForm.AddField("Y", mouthCollider.transform.position.y.ToString());
+            positionForm.AddField("Z", mouthCollider.transform.position.z.ToString());
+            positionForm.AddField("UserName", userName);
+            PostDictation(s3Location, positionForm);
+
+            WWWForm imageForm = new WWWForm();
+            Dictionary<string, string> imageHeaders = imageForm.headers;
+            imageHeaders["Type"] = "PNG";
+            //PostDictation(s3Location, picture, imageHeaders);
+
+            WWWForm audioForm = new WWWForm();
+            Dictionary<string, string> audioHeaders = audioForm.headers;
+            audioHeaders["Type"] = "WAV";
+            //PostDictation(s3Location, wavFile, audioHeaders);
+
+        }
     }
 
-    void PostDictation(string url, Dictation comment)
+    void PostDictation(string url, WWWForm form)
     {
-        string json = JsonUtility.ToJson(comment);
-
-        //Dictionary<string, string> headers = new Dictionary<string, string>();
-        //headers.Add("Content-Type", "application/json");
-        //headers.Add("Cookie", "Our session cookie");
-
-        //byte[] pData = Encoding.ASCII.GetBytes(json.ToCharArray());
-
-        WWWForm form = new WWWForm();
-
-        form.AddField("X", "10");
-        form.AddField("Y", "11");
-        form.AddField("Z", "12");
-        form.AddField("Name", "Marc");
-
-        //WWW www = new WWW(url, pData, headers);
         WWW www = new WWW(url, form);
 
         StartCoroutine(WaitForRequest(www));
     }
 
-    void GetURL()
+    void PostDictation(string url, byte[] rawdata, Dictionary<string, string> headers)
     {
+        WWW www = new WWW(url, rawdata, headers);
 
+        StartCoroutine(WaitForRequest(www));
     }
 
     IEnumerator WaitForRequest(WWW www)
