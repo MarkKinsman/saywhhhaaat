@@ -21,7 +21,11 @@ public class DictationManager : MonoBehaviour {
     [SerializeField]
     string projectName = "UWMC";
     [SerializeField]
-    string s3Location = "https://j7m0zw3qec.execute-api.us-east-1.amazonaws.com/prod/chris2.csv";
+    string dataLocation = "https://5986o5obfd.execute-api.us-west-2.amazonaws.com/prod/set_metadata";
+    [SerializeField]
+    string imageLocation = "https://5986o5obfd.execute-api.us-west-2.amazonaws.com/prod/s3/image/";
+    [SerializeField]
+    string audioLocation = "https://5986o5obfd.execute-api.us-west-2.amazonaws.com/prod/s3/";
 
     [Space(4)]
     [Header("User Settings")]
@@ -245,7 +249,7 @@ public class DictationManager : MonoBehaviour {
         Texture2D screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
         screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
         screenShot.Apply();
-        byte[] bytes = screenShot.EncodeToPNG();
+        byte[] bytes = screenShot.EncodeToJPG();
 
         if (!Directory.Exists(string.Format("{0}./_Dictation", Application.dataPath)))
         {
@@ -253,7 +257,7 @@ public class DictationManager : MonoBehaviour {
 
         }
 
-        string filename = string.Format("{0}/_Dictations/screen_{1}.png", Application.dataPath, System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+        string filename = string.Format("{0}/_Dictations/screen_{1}.jpg", Application.dataPath, System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
 
         System.IO.File.WriteAllBytes(filename, bytes);
         Debug.Log(string.Format("Took screenshot to: {0}", filename));
@@ -282,6 +286,21 @@ public class DictationManager : MonoBehaviour {
         }
     }
 
+    string ByteArrayToString(byte[] val)
+    {
+        string b = "";
+        int len = val.Length;
+        for (int i = 0; i < len; i++)
+        {
+            if (i != 0)
+            {
+                b += ",";
+            }
+            b += val[i].ToString();
+        }
+        return b;
+    }
+
     void StopRecord(object sender, ControllerInteractionEventArgs e)
     {
         if (record)
@@ -292,22 +311,34 @@ public class DictationManager : MonoBehaviour {
             byte[] wavFile = WavUtility.FromAudioClip(newClip, out filepath, true, "_Dictations");
             Debug.Log("Stop Recording.");
 
+            Dictation dictation = new Dictation();
+
+            System.DateTime epochStart = new System.DateTime(1970, 1, 1, 0, 0, 0, System.DateTimeKind.Utc);
+            int cur_time = (int)(System.DateTime.UtcNow - epochStart).TotalSeconds;
+
+            dictation.id = cur_time;
+            dictation.setPosition(mouthCollider.transform.position);
+            dictation.username = userName;
+
+            
             WWWForm positionForm = new WWWForm();
-            positionForm.AddField("X", mouthCollider.transform.position.x.ToString());
-            positionForm.AddField("Y", mouthCollider.transform.position.y.ToString());
-            positionForm.AddField("Z", mouthCollider.transform.position.z.ToString());
-            positionForm.AddField("UserName", userName);
-            PostDictation(s3Location, positionForm);
+            Dictionary<string, string> positionHeaders = positionForm.headers;
+            positionHeaders["Content-Type"] = "application/json";
+            string json = JsonUtility.ToJson(dictation);
+            //Debug.Log(json);
+            byte[] pData = Encoding.ASCII.GetBytes(json.ToCharArray());
+            //Debug.Log(ByteArrayToString(pData));
+            PostDictation(dataLocation, pData, positionHeaders);
 
             WWWForm imageForm = new WWWForm();
             Dictionary<string, string> imageHeaders = imageForm.headers;
-            imageHeaders["Type"] = "PNG";
-            //PostDictation(s3Location, picture, imageHeaders);
+            imageHeaders["Content-Type"] = "image/jpeg";
+            PostDictation(String.Format("{0}{1}.jpg",imageLocation, cur_time), picture, imageHeaders);
 
             WWWForm audioForm = new WWWForm();
             Dictionary<string, string> audioHeaders = audioForm.headers;
-            audioHeaders["Type"] = "WAV";
-            //PostDictation(s3Location, wavFile, audioHeaders);
+            audioHeaders["Content-Type"] = "audio/wav";
+            PostDictation(String.Format("{0}{1}.wav", audioLocation, cur_time), wavFile, audioHeaders);
 
         }
     }
