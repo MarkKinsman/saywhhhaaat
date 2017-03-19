@@ -3,18 +3,33 @@ using System.Collections;
 
 public class PlayAudio : MonoBehaviour {
 
-	// Use this for initialization
-	void Start () {
-	
-	}
-	
-	// Update is called once per frame
-        void OnCollisionEnter (Collision col)
+
+    
+    void Start()
     {
-            if (col.gameObject.GetComponent<AudioSource>() != null)
+
+    }
+
+    void OnTriggerEnter (Collider col)
+    {
+        Debug.Log("Hey look I found a collision");
+        if (col.gameObject.GetComponent<AudioSource>() != null)
+        {
+            if (!col.gameObject.GetComponent<AudioSource>().isPlaying)
             {
-            col.gameObject.GetComponent<AudioSource>().Play();
+                Debug.Log("Hey look that collison has an audio source");
+                col.gameObject.GetComponent<AudioSource>().Play();
             }
         }
     }
+
+    /*IEnumerator whenAudioFinish(AudioSource audio)
+    {
+        if (audio.isPlaying)
+        {
+            yield return null;
+        }
+
+        audio.gameObject.GetComponent<MeshRenderer>().material.color = new
+    }*/
 }

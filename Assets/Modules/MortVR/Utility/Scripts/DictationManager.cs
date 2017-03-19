@@ -221,8 +221,22 @@ public class DictationManager : MonoBehaviour {
         micLocation.transform.SetParent(GetController(dictationHandSide).transform);
         micLocation.transform.localPosition = new Vector3(0f, -0.0593f, 0.0288f);
         micLocation.transform.name = "Mic Location";
+
         cameraRig.transform.GetChild(0).gameObject.AddComponent<PlayAudio>();
+        cameraRig.transform.GetChild(0).gameObject.AddComponent<SphereCollider>();
+        cameraRig.transform.GetChild(0).gameObject.GetComponent<SphereCollider>().radius = .2f;
+        cameraRig.transform.GetChild(0).gameObject.GetComponent<SphereCollider>().isTrigger = true;
+        cameraRig.transform.GetChild(0).gameObject.AddComponent<Rigidbody>();
+        cameraRig.transform.GetChild(0).gameObject.GetComponent<Rigidbody>().isKinematic = true;
+        cameraRig.transform.GetChild(0).gameObject.GetComponent<Rigidbody>().useGravity = false;
+
         cameraRig.transform.GetChild(1).gameObject.AddComponent<PlayAudio>();
+        cameraRig.transform.GetChild(1).gameObject.AddComponent<SphereCollider>();
+        cameraRig.transform.GetChild(1).gameObject.GetComponent<SphereCollider>().radius = .2f;
+        cameraRig.transform.GetChild(1).gameObject.GetComponent<SphereCollider>().isTrigger = true;
+        cameraRig.transform.GetChild(1).gameObject.AddComponent<Rigidbody>();
+        cameraRig.transform.GetChild(1).gameObject.GetComponent<Rigidbody>().isKinematic = true;
+        cameraRig.transform.GetChild(1).gameObject.GetComponent<Rigidbody>().useGravity = false;
     }
 
     void CreateCamera()
@@ -346,10 +360,9 @@ public class DictationManager : MonoBehaviour {
 
 
             GameObject audioObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            audioObject.AddComponent<SphereCollider>();
-            audioObject.transform.localScale = new Vector3(.5f, .5f, .5f);
+            audioObject.transform.localScale = new Vector3(.15f, .15f, .15f);
             audioObject.transform.rotation = Quaternion.identity;
-            audioObject.transform.position = mouthCollider.transform.position;
+            audioObject.transform.position = mouthCollider.transform.position + new Vector3(0f,.5f,0f);
             audioObject.AddComponent<AudioSource>();
             AudioSource audio= audioObject.GetComponent<AudioSource>();
             audio.playOnAwake = false;
