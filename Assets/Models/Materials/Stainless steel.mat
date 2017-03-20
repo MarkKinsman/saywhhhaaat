@@ -139,7 +139,7 @@ Material:
       second: {r: 0, g: 0, b: 0, a: 1}
     - first:
         name: _SectionPlane
-      second: {r: 0.0026352387, g: 0.99684113, b: -0.07937739, a: 0}
+      second: {r: 0.23714559, g: 0.93808305, b: 0.25251177, a: 0}
     - first:
         name: _SectionPoint
-      second: {r: 0.14394787, g: 1.0891833, b: -0.08448142, a: 1}
+      second: {r: -0.9261847, g: 1.2569197, b: -0.05900286, a: 1}
